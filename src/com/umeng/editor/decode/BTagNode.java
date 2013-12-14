@@ -2,6 +2,8 @@ package com.umeng.editor.decode;
 
 import java.io.IOException;
 
+import com.umeng.editor.utils.TypedValue;
+
 public class BTagNode extends BXMLNode {
 	private final int TAG_START = 0x00100102;
 	private final int TAG_END   = 0x00100103;
@@ -15,6 +17,12 @@ public class BTagNode extends BXMLNode {
 	private short mRawStyleAttr;
 	
 	private int[] mRawAttrs;
+	
+	public BTagNode(){}
+	public BTagNode(int ns, int name){
+		mRawName = name;
+		mRawNSUri = ns;
+	}
 	
 	public void checkStartTag(int tag) throws IOException{
 		checkTag(TAG_START, tag);
@@ -90,12 +98,85 @@ public class BTagNode extends BXMLNode {
 		return attrs;
 	}
 	
+	public void setAttribute(Attribute attr){
+		//TODO I can't figure out the difference about id attribute, class attribute , style attribute , so It's hard to edit attribute now!
+	}
+	
+	/**
+	 * 
+	 * @param key
+	 * @return String mapping id
+	 */
+	public int getAttrStringForKey(int key){
+		Attribute[] attrs = getAttribute();
+		
+		for(Attribute attr : attrs){
+			if(attr.mName == key){
+				return attr.mString;
+			}
+		}
+		
+		return -1;
+	}
+	
+	public boolean setAttrStringForKey(int key, int string_value){
+		Attribute[] attrs = getAttribute();
+		
+		for(Attribute attr : attrs){
+			if(attr.mName == key){
+				attr.mString = string_value;
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * return scalar type for key
+	 * @param key
+	 * @return int[]{Type, Value}
+	 */
+	public int[] getAttrValueForKey(int key){
+		Attribute[] attrs = getAttribute();
+		
+		for(Attribute attr : attrs){
+			if(attr.mName == key){
+				int type_value [] = new int[2];
+				type_value[0] = attr.mType;
+				type_value[1] = attr.mValue;
+				return type_value;
+			}
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Don't support now
+	 * @param key
+	 * @param type
+	 * @param value
+	 * @return
+	 */
+	public boolean setAttrValueForKey(int key, int type, int value){
+		return false;
+	}
+	
 	public int getName(){
 		return mRawName;
 	}
 	
+	public void setName(int name){
+		mRawName = name;
+	}
+	
 	public int getNamesapce(){
 		return mRawNSUri;
+	}
+	
+	public void setNamespace(int ns){
+		mRawNSUri = ns;
 	}
 	
 	public static class Attribute {
@@ -106,6 +187,30 @@ public class BTagNode extends BXMLNode {
 		public int mString;
 		public int mType;
 		public int mValue;
+		
+		public Attribute(int ns, int name, int type){
+			mNameSpace = ns;
+			mName = name;
+			mType = type;
+		}
+		
+		public void setString(int str){
+			if(mType != TypedValue.TYPE_STRING){
+				throw new RuntimeException("Can't set string for none string type");
+			}
+			
+			mString = str;
+		}
+		
+		public void setValue(int type, int value){
+			if(type == TypedValue.TYPE_STRING){
+				mValue = value;
+				mString = value;
+			}else{
+				mValue = value;
+				mString = -1;
+			}
+		}
 		
 		public Attribute(int[] raw){
 			mNameSpace = raw[0];

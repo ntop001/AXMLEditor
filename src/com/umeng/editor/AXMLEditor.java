@@ -7,6 +7,7 @@ import com.umeng.editor.decode.BTagNode;
 import com.umeng.editor.decode.BTagNode.Attribute;
 import com.umeng.editor.decode.BXMLNode;
 import com.umeng.editor.decode.StringBlock;
+import com.umeng.editor.utils.TypedValue;
 
 public class AXMLEditor implements ICommand{
 	private final String META_DATA = "meta-data";
@@ -24,42 +25,46 @@ public class AXMLEditor implements ICommand{
 	}
 
 	public void editMetaData(){
+		//First add resource and get mapping ids
 		StringBlock sb = doc.getStringBlock();
-		sb.addString(META_DATA, NAME, VALUE);
-		sb.addString(mChannelName, mChannelValue);
+		
+		int meta_data = sb.putString(META_DATA);
+		int attr_name = sb.putString(NAME);
+		int attr_value = sb.putString(VALUE);
+		int channel_name = sb.putString(mChannelName);
+		int channel_value = sb.putString(mChannelValue);
+		int namespace = sb.getStringMapping("android");
 		
 		BXMLNode application = doc.getApplicationNode(); //manifest node
-		
 		List<BXMLNode> children = application.getChildren();
 		
-		BXMLNode umeng_meta = null;
+		BTagNode umeng_meta = null;
 		
 		end:for(BXMLNode node : children){
 			BTagNode m = (BTagNode)node;
-			String name = sb.getStringFor(m.getName());
-			if(META_DATA.equals(name)){
-				Attribute[] attrs = m.getAttribute();
-				
-				for(Attribute attr: attrs){
-					String a_name = sb.getStringFor( attr.mName );
-					String a_value = sb.getStringFor( attr.mString );
-					
-					if(NAME.equals(a_name) && mChannelName.equals(a_value)){
-						umeng_meta = node;
-						break end;
-					}
-				}
+			//it's a risk that the value for "android:name" may be not String
+			if((meta_data == m.getName()) && (m.getAttrStringForKey(attr_name) == channel_name)){
+					umeng_meta = m;
+					break end;
 			}
 		}
 		
-		if(umeng_meta == null){
-			//add a new elements
+		if(umeng_meta != null){
+			umeng_meta.setAttrStringForKey(attr_value, channel_value);
 		}else{
-			//edit value
+			Attribute name_attr = new Attribute(namespace, attr_name, TypedValue.TYPE_STRING);
+			name_attr.setString( channel_name );
+			Attribute value_attr = new Attribute(namespace, attr_value, TypedValue.TYPE_STRING);
+			value_attr.setString( channel_value );
+			
+			umeng_meta = new BTagNode(-1, meta_data);
+			umeng_meta.setAttribute(name_attr);
+			umeng_meta.setAttribute(value_attr);
+			
+			children.add(umeng_meta);
 		}
 		
-		
-		
+		//doc.build();
 	}
 	
 }

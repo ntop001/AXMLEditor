@@ -49,10 +49,29 @@ public class StringBlock implements IAXMLSerialize{
 		private List<String> mStrings;
 		private byte[] mRawStyles;
 		
-		public void addString(String ...strings){
-			for(String s : strings){
-				if(!s.trim().equals(s.trim())) mStrings.add(s);
+		public int getStringMapping(String str){
+			int size = mStrings.size();
+			for(int i=0; i< size ; i++){
+				if(mStrings.get(i).equals(str)){
+					return i;
+				}
 			}
+			
+			return -1;
+		}
+		
+		public int putString(String str){
+			if(containsString(str)){
+				return getStringMapping(str);
+			}
+			
+			mStrings.add(str);
+			
+			return ( mStrings.size() - 1);
+		}
+		
+		public boolean containsString(String str){
+			return mStrings.contains(str.trim());
 		}
 		
         /**
