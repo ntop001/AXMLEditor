@@ -12,7 +12,7 @@ public class Main {
 	public static void main(String[] args) {
 		try{
 			AXMLDoc doc = new AXMLDoc();
-			doc.parse(new FileInputStream("test/AndroidManifest.xml"));
+			doc.parse(new FileInputStream("test/test1.xml"));
 			doc.print();
 		}catch(Exception e){
 			e.printStackTrace();

@@ -12,7 +12,7 @@ public class BTagNode extends BXMLNode {
 	private int mRawName;
 	
 	private short mRawAttrCount;	//(id attr)<<16 + (normal attr ?)
-	private short mRawClassAttr;
+	private short mRawClassAttr;	//
 	private short mRawIdAttr;
 	private short mRawStyleAttr;
 	
@@ -73,19 +73,26 @@ public class BTagNode extends BXMLNode {
 		
 	}
 	
-	public Attribute getIdAttr(){
-		int[] idAttr = subArray(mRawAttrs, mRawIdAttr, Attribute.SIZE);
-		return new Attribute(idAttr);
+	/**
+	 * Eg:android:id="@+id/xxx". Equivalent to getAttributeValue(null, "id").
+	 * @return Attribute(name="id").mString
+	 */
+	public int getIdAttr(){
+		return getAttrStringForKey(mRawIdAttr);
 	}
-	
-	public Attribute getClassAttr(){
-		int[] styleAttr = subArray(mRawAttrs, mRawClassAttr, Attribute.SIZE);
-		return new Attribute(styleAttr);
+	/**
+	 * Eg:android:class="com.foo.example". Equivalent to getAttributeValue(null, "class").
+	 * @return Attribute(name="class").mString
+	 */
+	public int getClassAttr(){
+		return getAttrStringForKey(mRawClassAttr);
 	}
-	
-	public Attribute getStyleAttr(){
-		int[] styleAttr = subArray(mRawAttrs, mRawStyleAttr, Attribute.SIZE);
-		return new Attribute(styleAttr);
+	/**
+	 * Eg:style=""@style/Button". Equivalent to getAttributeValue(null, "style").
+	 * @return Attribute(name="style").mString
+	 */
+	public int getStyleAttr(){
+		return getAttrStringForKey(mRawStyleAttr);
 	}
 	
 	public Attribute[] getAttribute(){

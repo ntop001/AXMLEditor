@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 /**
  * @author Dmitry Skiba
@@ -46,8 +45,14 @@ public class StringBlock implements IAXMLSerialize{
 		private int[] mPerStrOffset;
 		private int[] mPerStyOffset;
 		
+		/**
+		 * raw String
+		 */
 		private List<String> mStrings;
-		private byte[] mRawStyles;
+		/**
+		 * android can identify HTML tags in a string，all the styles are kept here 
+		 */
+		private List<Style> mStyles;
 		
 		public int getStringMapping(String str){
 			int size = mStrings.size();
@@ -95,6 +100,7 @@ public class StringBlock implements IAXMLSerialize{
 			
 			if(mStylesCount > 0){
 				mPerStyOffset = reader.readIntArray(mStylesCount);
+				mStyles = new ArrayList<Style>();
 			}
 			
 			//read string
@@ -112,7 +118,22 @@ public class StringBlock implements IAXMLSerialize{
 			//read styles
 			if(mStylesCount > 0){
 				int size = mChunkSize - mStyBlockOffset;
-				mRawStyles = reader.readByteArray(size);
+				int[] styles = reader.readIntArray(size/4);
+				
+
+				for(int i = 0; i< mStylesCount; i++){
+					int offset = mPerStyOffset[i];
+					int j = offset;
+					for(; j< styles.length; j++){
+						if(styles[j] == -1) break;
+					}
+					
+					int[] array = new int[j-offset];
+					System.arraycopy(styles, offset, array, 0, array.length);
+					Style d = Style.parse(array);
+					
+					mStyles.add(d);
+				}
 			}
         }
         
@@ -212,51 +233,15 @@ public class StringBlock implements IAXMLSerialize{
         {
             return (short)((byte2 << 8) + byte1);
         }
+        
+        public Style getStyle(int index){
+        	return mStyles.get(index);
+        }
 
         ///////////////////////////////////////////// implementation
 
         public StringBlock() {
         }
-        
-        /**
-         * Returns style information - array of int triplets,
-         * where in each triplet:
-         *      * first int is index of tag name ('b','i', etc.)
-         *      * second int is tag start index in string
-         *      * third int is tag end index in string
-         */
-        public int[] getStyle(int index) {
-                if (m_styleOffsets==null || m_styles==null ||
-                        index>=m_styleOffsets.length)
-                {
-                        return null;
-                }
-                int offset=m_styleOffsets[index]/4;
-                int style[];
-                {
-                        int count=0;
-                        for (int i=offset;i<m_styles.length;++i) {
-                                if (m_styles[i]==-1) {
-                                        break;
-                                }
-                                count+=1;
-                        }
-                        if (count==0 || (count%3)!=0) {
-                                return null;
-                        }
-                        style=new int[count];
-                }
-                for (int i=offset,j=0;i<m_styles.length;) {
-                        if (m_styles[i]==-1) {
-                                break;
-                        }
-                        style[j++]=m_styles[i++];
-                }
-                return style;
-        }
-       
-        private int[] m_styleOffsets;
-        private int[] m_styles;
         
 		@Override
 		public int getType() {
@@ -273,6 +258,66 @@ public class StringBlock implements IAXMLSerialize{
 		@Override
 		public void setType(int type) {
 			// TODO Auto-generated method stub
+			
+		}
+		
+		public static class Style {
+			List<Decorator> mDct;
+			
+			public Style(){
+			}
+			
+			public void addStyle(Decorator style){
+				mDct.add(style);
+			}
+			
+			public static Style parse(int[] muti_triplet) throws IOException{
+				if(muti_triplet == null || (muti_triplet.length%3 != 0)){
+					throw new IOException("Fail to parse style");
+				}
+				
+				Style d = new Style();
+				
+				Decorator style = null;
+				for(int i = 0; i < muti_triplet.length; i++){
+					if(i%3 == 0){
+						new Decorator();
+					}
+					
+					switch(i%3){
+					case 0:
+					{
+						style = new Decorator();
+						style.mTag = muti_triplet[i];
+					}break;
+					case 1:
+					{
+						style.mDoctBegin = muti_triplet[i];
+					}break;
+					case 2:
+					{
+						style.mDoctEnd = muti_triplet[i];
+						d.mDct.add(style);
+					}break;
+					}
+				}
+				
+				return d;
+			}
+		}
+		
+		public static class Decorator{
+			public int mTag;
+			public int mDoctBegin;
+			public int mDoctEnd;
+			
+			public Decorator(int[] triplet){
+				mTag = triplet[0];
+				mDoctBegin = triplet[1];
+				mDoctEnd = triplet[2];
+			}
+			
+			public Decorator(){}
 			
 		}
 }

@@ -65,8 +65,11 @@ public class XMLVisitor implements IVisitor{
 			if(attr.hasNamespace()){
 				sb.append("android").append(':');
 			}
-			
-			sb.append(getStringAt(attr.mName)).append('=');
+			String name = getStringAt(attr.mName);
+			if("id".equals(name)){
+				System.out.println("hehe");
+			}
+			sb.append(name).append('=');
 			sb.append('\"').append(getAttributeValue(attr)).append('\"');
 			
 			print(sb.toString());
