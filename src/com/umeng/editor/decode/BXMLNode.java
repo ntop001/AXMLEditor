@@ -26,12 +26,14 @@ public abstract class BXMLNode implements IVisitable{
 		mLineNumber.second = reader.readInt();
 	}
 	
-	public void writeStart(IntWriter writer){
-		
+	public void writeStart(IntWriter writer) throws IOException{
+		writer.writeInt(mChunkSize.first);
+		writer.writeInt(mLineNumber.first);
 	}
 	
-	public void writeEnd(IntWriter writer){
-		
+	public void writeEnd(IntWriter writer) throws IOException{
+		writer.writeInt(mChunkSize.second);
+		writer.writeInt(mLineNumber.second);
 	}
 	
 	public boolean hasChild(){
@@ -47,5 +49,15 @@ public abstract class BXMLNode implements IVisitable{
 		if(node != null){
 			mChild.add(node);
 		}
+	}
+	
+	public abstract void prepare();
+	
+	public Pair<Integer,Integer> getSize(){
+		return mChunkSize;
+	}
+	
+	public Pair<Integer,Integer> getLineNumber(){
+		return mLineNumber;
 	}
 }

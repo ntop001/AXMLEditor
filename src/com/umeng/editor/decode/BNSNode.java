@@ -39,12 +39,26 @@ public class BNSNode extends BXMLNode {
 		}
 	}
 	
-	public void writeStart(IntWriter writer){
-		
+	public void prepare(){
+		//TODO line number
 	}
 	
-	public void writeEnd(IntWriter writer){
+	public void writeStart(IntWriter writer) throws IOException{
+		writer.writeInt(TAG_START);
+		super.writeStart(writer);
 		
+		writer.writeInt(0xFFFFFFFF);
+		writer.writeInt(mPrefix);
+		writer.writeInt(mUri);
+	}
+	
+	public void writeEnd(IntWriter writer) throws IOException{
+		writer.writeInt(TAG_END);
+		super.writeEnd(writer);
+		
+		writer.writeInt(0xFFFFFFFF);
+		writer.writeInt(mPrefix);
+		writer.writeInt(mUri);
 	}
 	
 	public int getPrefix(){

@@ -22,13 +22,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 /**
- * @author Dmitry Skiba
- * 
- * Block of strings, used in binary xml and arsc.
- * 
- * TODO:
- * - implement get()
- *
+ * write and read StringBlock
+ * @author NTOOOOOP
  */
 public class StringBlock implements IAXMLSerialize{
 		private static final int TAG = 0x001C0001;
@@ -112,6 +107,8 @@ public class StringBlock implements IAXMLSerialize{
 					int offset = mPerStrOffset[i];
 		        	short len = toShort(rawStrings[offset], rawStrings[offset+1]);
 					mStrings.add(i,new String(rawStrings,offset+2, len*2, Charset.forName("UTF-16LE")));
+					
+					System.out.println("::"+ mStrings.get(i));
 				}
 			}
 			
@@ -139,21 +136,57 @@ public class StringBlock implements IAXMLSerialize{
         
         @Override
 		public void write(IntWriter writer) throws IOException {
-			writer.writeInt(TAG);
-			writer.writeInt(getSize());
-			writer.writeInt(mStrings == null ?0: mStrings.size());
-			//TODO style count ,writer.writeInt(i)
-			writer.writeInt(mEncoder);
+			//base seven
+        	int size = 0;
+        	size += writer.writeInt(TAG);
+        	size += writer.writeInt(mChunkSize);
+        	size += writer.writeInt(mStringsCount);
+        	size += writer.writeInt(mStylesCount);
+        	size += writer.writeInt(mEncoder);
+        	size += writer.writeInt(mStrBlockOffset);
+        	size += writer.writeInt(mStyBlockOffset);
 			
-			int strBlockOffset = 
-					+ writer.getPosition() 	//current position
-					+ INT_SIZE 				//string base offset
-					+ INT_SIZE				//style base offset
-					+ (mStrings == null ?0: mStrings.size()*INT_SIZE) //int array for string relative offset
-					+ 0 //TODO about style(mSty)
-					;
-			writer.writeInt(strBlockOffset);
+			if(mPerStrOffset != null){
+				for(int offset : mPerStrOffset){
+					size += writer.writeInt(offset);
+				}
+			}
 			
+			if(mPerStyOffset != null){
+				for(int offset : mPerStyOffset){
+					size += writer.writeInt(offset);
+				}
+			}
+			
+			if(mStrings != null){
+				for(String s : mStrings){
+					byte[] raw = s.getBytes("UTF-16LE");
+					size += writer.writeShort((short)(s.length()));
+					size += writer.writeByteArray(raw);
+					size += writer.writeShort((short)0);
+				}
+			}
+			
+			if(mStyles != null){
+				for(Style style : mStyles){
+					size += style.write(writer);
+				}
+			}
+			
+			if(mChunkSize > size){
+				writer.writeShort((short)0);
+			}
+			
+		}
+        
+        public void prepare() throws IOException{
+        	//mStrings
+        	mStringsCount = mStrings == null ? 0:mStrings.size();
+        	mStylesCount = mStyles == null ? 0: mStyles.size();
+        	
+        	//string & style block offset
+        	int base = INT_SIZE*7;//from 0 to string array
+        	
 			int strSize = 0;
 			int []perStrSize = null;
 			
@@ -162,67 +195,56 @@ public class StringBlock implements IAXMLSerialize{
 				perStrSize = new int[mStrings.size()];
 				for(int i =0; i< mStrings.size(); i++){
 					perStrSize[i] = size;
-					size = 2 + mStrings.get(i).getBytes("UTF-16LE").length;
-					strSize += size;
+					try{
+						size += 2 + mStrings.get(i).getBytes("UTF-16LE").length + 2;
+					}catch(UnsupportedEncodingException e){
+						throw new IOException(e);
+					}
 				}
+				strSize = size;
 			}
 			
 			int stySize = 0;
 			int[] perStySize = null;
-			
-			//TODO style again
-			
-			int styleBlockOffset = strBlockOffset + stySize;
-			writer.writeInt(styleBlockOffset);
-			
-			if(perStrSize != null){
-				for(int i : perStrSize){
-					writer.writeInt(i);
+			if(mStyles != null){
+				int size = 0;
+				perStySize = new int[mStyles.size()];
+				for(int i=0; i< mStyles.size(); i++){
+					perStySize[i] = size;
+					size += mStyles.get(i).getSize();
 				}
+				stySize = size;
 			}
 			
-			if(perStySize != null){
-				for(int i : perStySize){
-					writer.writeInt(i);
-				}
+			int string_array_size = perStrSize == null ? 0: perStrSize.length*INT_SIZE;
+			int style_array_size = perStySize == null ? 0: perStySize.length*INT_SIZE;
+			
+			if(mStrings!= null && mStrings.size() >0){
+				mStrBlockOffset = base + string_array_size + style_array_size;
+				mPerStrOffset = perStrSize;
+			}else{
+				mStrBlockOffset = 0;
+				mPerStrOffset = null;
 			}
 			
-			if(mStrings != null){
-				for(String s : mStrings){
-					byte[] raw = s.getBytes("UTF-16LE");
-					writer.writeShort((short)raw.length);
-					writer.writeByteArray(raw);
-				}
+			if(mStyles != null && mStyles.size() > 0){
+				mStyBlockOffset = base + string_array_size + style_array_size + strSize;
+				mPerStyOffset = perStySize;
+			}else{
+				mStyBlockOffset = 0;
+				mPerStyOffset = null;
 			}
 			
-			//TODO write style...
+			mChunkSize = base + string_array_size + style_array_size + strSize + stySize;
 			
-		}
+			int align = mChunkSize % 4;
+			if(align != 0){
+				mChunkSize += (INT_SIZE - align);
+			}
+        }
         
         public int getSize(){
-        	int size = 0;
-        	size += INT_SIZE;	//for type
-        	size += INT_SIZE;  	//for size
-        	size += INT_SIZE;  	//string count
-        	size += INT_SIZE;  	//style count
-        	size += INT_SIZE;	//encode
-        	size += INT_SIZE;	//string block offset
-        	size += INT_SIZE;	//style block offset
-        	
-        	if(mStrings.size() > 0){
-        		size += mStrings.size()*INT_SIZE;
-        		for(String s : mStrings){
-        			try {
-        				size += 2;
-						size += s.getBytes("UTF-16LE").length;
-					} catch (UnsupportedEncodingException e) {
-						throw new RuntimeException(e);
-					}
-        		}
-        	}
-        	
-        	//TODO if(mStyles.)
-        	return size;
+        	return mChunkSize;
         }
         
         public String getStringFor(int index){
@@ -265,14 +287,30 @@ public class StringBlock implements IAXMLSerialize{
 			List<Decorator> mDct;
 			
 			public Style(){
+				mDct = new ArrayList<Decorator>();
+			}
+			
+			public List<Decorator> getDecorator(){
+				return mDct;
 			}
 			
 			public void addStyle(Decorator style){
 				mDct.add(style);
 			}
 			
+			public int getSize(){
+				int size = 0;
+				size += getCount()*Decorator.SIZE;
+				size += 1;//[-1] as a seperator
+				return size;
+			}
+			
+			public int getCount(){
+				return mDct.size();
+			}
+			
 			public static Style parse(int[] muti_triplet) throws IOException{
-				if(muti_triplet == null || (muti_triplet.length%3 != 0)){
+				if(muti_triplet == null || (muti_triplet.length%Decorator.SIZE != 0)){
 					throw new IOException("Fail to parse style");
 				}
 				
@@ -280,7 +318,7 @@ public class StringBlock implements IAXMLSerialize{
 				
 				Decorator style = null;
 				for(int i = 0; i < muti_triplet.length; i++){
-					if(i%3 == 0){
+					if(i%Decorator.SIZE == 0){
 						new Decorator();
 					}
 					
@@ -304,9 +342,26 @@ public class StringBlock implements IAXMLSerialize{
 				
 				return d;
 			}
+			
+			public int write(IntWriter writer) throws IOException{
+				int size = 0;
+				if(mDct!= null && mDct.size() > 0){
+					for(Decorator dct: mDct){
+						size += writer.writeInt(dct.mTag);
+						size += writer.writeInt(dct.mDoctBegin);
+						size += writer.writeInt(dct.mDoctEnd);
+					}
+					
+					size += writer.writeInt(-1);
+				}
+				
+				return size;
+			}
 		}
 		
 		public static class Decorator{
+			public static final int SIZE = 3;
+			
 			public int mTag;
 			public int mDoctBegin;
 			public int mDoctEnd;

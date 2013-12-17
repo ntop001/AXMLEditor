@@ -64,10 +64,29 @@ public class AXMLDoc {
 		return null;
 	}
 	
-	public void writeTo(OutputStream os) throws IOException{
+	/**
+	 * Prepare() should be called, if any resource has changes.
+	 * @param os
+	 * @throws IOException
+	 */
+	public void build(OutputStream os) throws IOException{
 		IntWriter writer = new IntWriter(os, false);
+		out.println("string block size:" + mStringBlock.getSize());
+		mStringBlock.prepare();
+		out.println("string block size:" + mStringBlock.getSize());
 		
-		int size = mStringBlock.getSize() + mResBlock.getSize() + mXMLTree.getSize();
+		out.println("res block size:" + mResBlock.getSize());
+		mResBlock.prepare();
+		out.println("res size:" + mResBlock.getSize());
+		
+		out.println("xml size:" + mXMLTree.getSize());
+		mXMLTree.prepare();
+		out.println("xml size:" + mXMLTree.getSize());
+		
+		out.println("doc size:" + mDocSize);
+		int base = 8;
+		int size = base + mStringBlock.getSize() + mResBlock.getSize() + mXMLTree.getSize();
+		out.println("doc size:" + size);
 		
 		writer.writeInt(MAGIC_NUMBER);
 		writer.writeInt(size);
@@ -111,9 +130,6 @@ public class AXMLDoc {
 		if(chunkType == CHUNK_XML_TREE){
 			parseXMLTree(reader);
 		}
-		
-		//out.println(chunkType);
-		//parseXMLTree(reader);
 	}
 	
 	private void parseStringBlock(IntReader reader) throws Exception{

@@ -1,6 +1,8 @@
 package com.umeng.editor.decode;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.umeng.editor.utils.TypedValue;
 
@@ -12,11 +14,12 @@ public class BTagNode extends BXMLNode {
 	private int mRawName;
 	
 	private short mRawAttrCount;	//(id attr)<<16 + (normal attr ?)
-	private short mRawClassAttr;	//
-	private short mRawIdAttr;
-	private short mRawStyleAttr;
 	
-	private int[] mRawAttrs;
+	private short mRawClassAttr;	//'class='
+	private short mRawIdAttr;		//'android:id='
+	private short mRawStyleAttr;	//'style='
+	
+	private List<Attribute> mRawAttrs;
 	
 	public BTagNode(){}
 	public BTagNode(int ns, int name){
@@ -47,9 +50,13 @@ public class BTagNode extends BXMLNode {
 		mRawClassAttr = (short)reader.readShort();	//class 
 		mRawStyleAttr = (short)reader.readShort();
 		
-		mRawAttrs = reader.readIntArray(mRawAttrCount*Attribute.SIZE); //namespace, name, value(string),value(type),value(data)
-		
-		//Attribute attr = getIdAttr();
+		if(mRawAttrCount > 0){
+			mRawAttrs = new ArrayList<Attribute>();
+			int [] attrs = reader.readIntArray(mRawAttrCount*Attribute.SIZE); //namespace, name, value(string),value(type),value(data)
+			for(int i=0; i< mRawAttrCount; i++){
+				mRawAttrs.add(new Attribute(subArray(attrs, i*Attribute.SIZE, Attribute.SIZE)));
+			}
+		}
 	}
 	
 	@SuppressWarnings("unused")
@@ -65,12 +72,52 @@ public class BTagNode extends BXMLNode {
 		}
 	}
 	
-	public void writeStart(IntWriter writer){
+	private static final int INT_SIZE = 4;
+	
+	//chunsize, attr count
+	public void prepare(){
+		int base_first = INT_SIZE * 9;
+		//System.out.println("chunksize origin 1:" + mChunkSize.first + " 2:"+mChunkSize.second);
+		mRawAttrCount =(short)(mRawAttrs == null ? 0: mRawAttrs.size());
+		//ignore id, class, style attribute's bee's way
 		
+		int attrSize = mRawAttrs == null ? 0: mRawAttrs.size()*Attribute.SIZE*INT_SIZE;
+		mChunkSize.first = base_first + attrSize;
+		mChunkSize.second = INT_SIZE*6;
+		//System.out.println("chunksize after 1:" + mChunkSize.first + " 2:"+mChunkSize.second);
+		//TODO ~ line number ~
 	}
 	
-	public void writeEnd(IntWriter writer){
+	public void writeStart(IntWriter writer) throws IOException{
+		writer.writeInt(TAG_START);
+		super.writeStart(writer);
+		writer.writeInt(0xFFFFFFFF);
+		writer.writeInt(mRawNSUri);
+		writer.writeInt(mRawName);
+		writer.writeInt(0x00140014);
 		
+		writer.writeShort(mRawAttrCount);
+		writer.writeShort((short)0);//id
+		writer.writeShort((short)0);//class
+		writer.writeShort((short)0);//style
+		
+		if(mRawAttrCount > 0){
+			for(Attribute attr : mRawAttrs){
+				writer.writeInt(attr.mNameSpace);
+				writer.writeInt(attr.mName);
+				writer.writeInt(attr.mString);
+				writer.writeInt(attr.mType);
+				writer.writeInt(attr.mValue);
+			}
+		}
+	}
+	
+	public void writeEnd(IntWriter writer) throws IOException{
+		writer.writeInt(TAG_END);
+		super.writeEnd(writer);
+		writer.writeInt(0xFFFFFFFF);
+		writer.writeInt(mRawNSUri);
+		writer.writeInt(mRawName);
 	}
 	
 	/**
@@ -96,17 +143,19 @@ public class BTagNode extends BXMLNode {
 	}
 	
 	public Attribute[] getAttribute(){
-		Attribute[] attrs = new Attribute[mRawAttrCount];
-		
-		for(int i =0; i< mRawAttrCount; i++){
-			attrs[i] = new Attribute(subArray(mRawAttrs,i*Attribute.SIZE,Attribute.SIZE));
+		if(mRawAttrs == null){
+			return new Attribute[0];
+		}else{
+			return mRawAttrs.toArray(new Attribute[mRawAttrs.size()]);
 		}
-		
-		return attrs;
 	}
 	
 	public void setAttribute(Attribute attr){
-		//TODO I can't figure out the difference about id attribute, class attribute , style attribute , so It's hard to edit attribute now!
+		if(mRawAttrs == null){
+			mRawAttrs = new ArrayList<Attribute>();
+		}
+		
+		mRawAttrs.add(attr);
 	}
 	
 	/**

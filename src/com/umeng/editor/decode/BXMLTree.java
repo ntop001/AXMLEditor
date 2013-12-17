@@ -12,6 +12,7 @@ public class BXMLTree implements IAXMLSerialize{
 	
 	private Stack<BXMLNode> mVisitor;
 	private BNSNode mRoot;
+	private int mSize;
 
 	public BXMLTree(){
 		mRoot = new BNSNode();
@@ -21,9 +22,41 @@ public class BXMLTree implements IAXMLSerialize{
 	public void print(IVisitor visitor){
 		mRoot.accept(visitor);
 	}
+	
+	public void write(IntWriter writer) throws IOException{
+		write(mRoot, writer);
+	}
+	
+	public void prepare(){
+		mSize = 0;
+		prepare(mRoot);
+	}
+	
+	private void write(BXMLNode node, IntWriter writer) throws IOException{
+		node.writeStart(writer);
+		
+		if(node.hasChild()){
+			for(BXMLNode child : node.getChildren()){
+				write(child, writer);
+			}
+		}
+		node.writeEnd(writer);
+	}
+	
+	private void prepare(BXMLNode node){
+		node.prepare();
+		Pair<Integer,Integer> p = node.getSize();
+		mSize += p.first + p.second;
+		
+		if(node.hasChild()){
+			for(BXMLNode child:node.getChildren()){
+				prepare(child);
+			}
+		}
+	}
 
 	public int getSize(){
-		return 0;
+		return mSize;
 	}
 	
 	public BXMLNode getRoot(){
@@ -92,12 +125,6 @@ public class BXMLTree implements IAXMLSerialize{
 
 	@Override
 	public void setType(int type) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void write(IntWriter writer) throws IOException {
 		// TODO Auto-generated method stub
 		
 	}

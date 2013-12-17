@@ -24,8 +24,17 @@ public class BTXTNode extends BXMLNode implements IVisitable{
 	public void readEnd(IntReader reader) throws IOException{
 	}
 	
-	public void writeStart(IntWriter writer){
+	public void prepare(){
 		
+	}
+	
+	public void writeStart(IntWriter writer) throws IOException{
+		writer.writeInt(TAG);
+		super.writeStart(writer);
+		writer.writeInt(mRawName);
+		
+		writer.writeInt(0);//skiped
+		writer.writeInt(0);//skiped
 	}
 	
 	public void writeEnd(IntWriter writer){

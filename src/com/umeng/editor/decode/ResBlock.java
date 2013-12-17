@@ -3,8 +3,10 @@ package com.umeng.editor.decode;
 import java.io.IOException;
 
 public class ResBlock implements IAXMLSerialize{
+	private static final int TAG = 0x00080180;
+	
 	private int mChunkSize;
-	private byte[] mRawResIds;
+	private int[] mRawResIds;
 	
 	public void print(){
 		StringBuilder sb = new StringBuilder();
@@ -24,46 +26,44 @@ public class ResBlock implements IAXMLSerialize{
 			throw new IOException("Invalid resource ids size ("+mChunkSize+").");
 		}
 		
-		mRawResIds = reader.readByteArray(mChunkSize - 8);//subtract base offset (type + size)
+		mRawResIds = reader.readIntArray(mChunkSize/4 - 2);//subtract base offset (type + size)
+	}
+	
+	private final int INT_SIZE = 4;
+	public void prepare(){
+		int base = 2*INT_SIZE;
+		int resSize = mRawResIds == null ? 0:mRawResIds.length*INT_SIZE;
+		mChunkSize = base + resSize;
+	}
+	
+	@Override
+	public void write(IntWriter writer) throws IOException {
+		writer.writeInt(TAG);
+		writer.writeInt(mChunkSize);
+		
+		if(mRawResIds != null){
+			for(int id : mRawResIds){
+				writer.writeInt(id);
+			}
+		}
 	}
 	
 	public int[] getResourceIds(){
-		int len = mRawResIds.length / 4;
-		int[] ids = new int[len];
-		
-		for(int i =0; i< len; i++){
-			ids[i] = byteArrayToInt(mRawResIds, i*4);
-		}
-		
-		return ids;
+		return mRawResIds;
 	}
 	
 	public int getResourceIdAt(int index){
-		int[] ids = getResourceIds();
-		return ids[index];
-	}
-	
-	private int byteArrayToInt(byte[] b, int start) 
-	{
-		if((start + 4) > b.length ){
-			throw new RuntimeException("Out of array size");
-		}
-		
-	    int value = (b[start] & 0xff) | ((b[start+1] << 8) & 0xff00) // | 表示安位或 
-	    		| ((b[start+2] << 24) >>> 8) | (b[start+3] << 24); 
-	    return value;
+		return mRawResIds[index];
 	}
 
 	@Override
 	public int getSize() {
-		// TODO Auto-generated method stub
 		return mChunkSize;
 	}
 
 	@Override
 	public int getType() {
-		// TODO Auto-generated method stub
-		return 0;
+		return TAG;
 	}
 
 	@Override
@@ -74,12 +74,6 @@ public class ResBlock implements IAXMLSerialize{
 
 	@Override
 	public void setType(int type) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void write(IntWriter writer) throws IOException {
 		// TODO Auto-generated method stub
 		
 	}

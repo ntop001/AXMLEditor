@@ -51,20 +51,24 @@ public class IntWriter {
     	m_position += 1;
     }
     
-    public final void writeShort(short s) throws IOException {
+    public final int writeShort(short s) throws IOException {
     	shortBB.clear();
     	shortBB.putShort(s);
   
     	m_stream.write(shortBB.array());
     	m_position += 2;
+    	
+    	return 2;
     }
     
-    public final void writeInt(int i) throws IOException {
+    public final int writeInt(int i) throws IOException {
         intBB.clear();
         intBB.putInt(i);
         
         m_stream.write(intBB.array());
         m_position += 4;
+        
+        return 4;
     }
     
     public final void writeIntArray(int[] array) throws IOException {
@@ -80,9 +84,11 @@ public class IntWriter {
     	}
     }
     
-    public final void writeByteArray(byte[] array) throws IOException {
+    public final int writeByteArray(byte[] array) throws IOException {
     	m_stream.write(array);
     	m_position += array.length;
+    	
+    	return array.length;
     }
     
     public final void skip(int n, byte def) throws IOException {
