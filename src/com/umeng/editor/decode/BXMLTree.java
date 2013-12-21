@@ -3,6 +3,8 @@ package com.umeng.editor.decode;
 import java.io.IOException;
 import java.util.Stack;
 
+import com.umeng.editor.utils.Pair;
+
 public class BXMLTree implements IAXMLSerialize{
 	private final int NS_START  = 0x00100100;
 	private final int NS_END  	= 0x00100101;
@@ -113,19 +115,14 @@ public class BXMLTree implements IAXMLSerialize{
 
 	@Override
 	public int getType() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public void setSize(int size) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
-	public void setType(int type) {
-		// TODO Auto-generated method stub
-		
+	public void setType(int type) {	
 	}
 }

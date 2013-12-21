@@ -51,10 +51,15 @@ public class BTagNode extends BXMLNode {
 		mRawStyleAttr = (short)reader.readShort();
 		
 		if(mRawAttrCount > 0){
+			if(mRawName == 62 ){
+				System.out.println();
+			}
 			mRawAttrs = new ArrayList<Attribute>();
 			int [] attrs = reader.readIntArray(mRawAttrCount*Attribute.SIZE); //namespace, name, value(string),value(type),value(data)
 			for(int i=0; i< mRawAttrCount; i++){
 				mRawAttrs.add(new Attribute(subArray(attrs, i*Attribute.SIZE, Attribute.SIZE)));
+				
+				Attribute attr = mRawAttrs.get(i);
 			}
 		}
 	}
@@ -97,9 +102,9 @@ public class BTagNode extends BXMLNode {
 		writer.writeInt(0x00140014);
 		
 		writer.writeShort(mRawAttrCount);
-		writer.writeShort((short)0);//id
-		writer.writeShort((short)0);//class
-		writer.writeShort((short)0);//style
+		writer.writeShort(mRawIdAttr);//id
+		writer.writeShort(mRawClassAttr);//class
+		writer.writeShort(mRawStyleAttr);//style
 		
 		if(mRawAttrCount > 0){
 			for(Attribute attr : mRawAttrs){
@@ -180,7 +185,8 @@ public class BTagNode extends BXMLNode {
 		
 		for(Attribute attr : attrs){
 			if(attr.mName == key){
-				attr.mString = string_value;
+				attr.setValue(TypedValue.TYPE_STRING, string_value);
+				attr.setString(string_value);
 				return true;
 			}
 		}
@@ -251,13 +257,19 @@ public class BTagNode extends BXMLNode {
 		}
 		
 		public void setString(int str){
-			if(mType != TypedValue.TYPE_STRING){
+			if((mType>>24) != TypedValue.TYPE_STRING){
 				throw new RuntimeException("Can't set string for none string type");
 			}
 			
 			mString = str;
+			mValue = str;
 		}
 		
+		/**
+		 * TODO type >>> 16 = real type , so how to fix it
+		 * @param type
+		 * @param value
+		 */
 		public void setValue(int type, int value){
 			if(type == TypedValue.TYPE_STRING){
 				mValue = value;
@@ -266,6 +278,7 @@ public class BTagNode extends BXMLNode {
 				mValue = value;
 				mString = -1;
 			}
+			
 		}
 		
 		public Attribute(int[] raw){

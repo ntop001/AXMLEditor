@@ -3,6 +3,7 @@ package com.umeng.editor.decode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.System.out;
@@ -21,10 +22,16 @@ public class AXMLDoc {
 	private ResBlock mResBlock;
 	
 	private BXMLTree mXMLTree;
+	private List<IEditor> cmds;
 	
 	public AXMLDoc(){
 	}
 	
+	public void addEditor(IEditor editor){
+		if(cmds == null) cmds = new ArrayList<IEditor>();
+		cmds.add(editor);
+	}
+
 	public StringBlock getStringBlock(){
 		return mStringBlock;
 	}
@@ -64,13 +71,42 @@ public class AXMLDoc {
 		return null;
 	}
 	
+	private void commitChanges(){
+		if(cmds == null || cmds.isEmpty()) return;
+		
+		for(IEditor editor:cmds){
+			editor.onEdit(this);
+		}
+	}
+	
 	/**
 	 * Prepare() should be called, if any resource has changes.
 	 * @param os
 	 * @throws IOException
 	 */
 	public void build(OutputStream os) throws IOException{
+		commitChanges();
+		
 		IntWriter writer = new IntWriter(os, false);
+		mStringBlock.prepare();
+		mResBlock.prepare();
+		mXMLTree.prepare();
+		
+		int base = 8;
+		mDocSize = base + mStringBlock.getSize() + mResBlock.getSize() + mXMLTree.getSize();
+		
+		writer.writeInt(MAGIC_NUMBER);
+		writer.writeInt(mDocSize);
+		
+		mStringBlock.write(writer);
+		mResBlock.write(writer);
+		mXMLTree.write(writer);
+		
+		os.flush();
+		os.close();
+	}
+	
+	public void testSize() throws IOException{
 		out.println("string block size:" + mStringBlock.getSize());
 		mStringBlock.prepare();
 		out.println("string block size:" + mStringBlock.getSize());
@@ -87,13 +123,6 @@ public class AXMLDoc {
 		int base = 8;
 		int size = base + mStringBlock.getSize() + mResBlock.getSize() + mXMLTree.getSize();
 		out.println("doc size:" + size);
-		
-		writer.writeInt(MAGIC_NUMBER);
-		writer.writeInt(size);
-		
-		mStringBlock.write(writer);
-		mResBlock.write(writer);
-		mXMLTree.write(writer);
 	}
 	
 	public void print(){

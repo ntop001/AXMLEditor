@@ -1,5 +1,6 @@
 package com.umeng.editor.decode;
 
+import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,10 +9,6 @@ import java.io.InputStream;
  * @author Dmitry Skiba
  *
  * Simple helper class that allows reading of integers.
- * 
- * TODO:
- *      * implement buffering
- *
  */
 public final class IntReader {
 	    
@@ -22,7 +19,7 @@ public final class IntReader {
 	    }
 	    
 	    public final void reset(InputStream stream,boolean bigEndian) {
-	            m_stream=stream;
+	            m_stream= new BufferedInputStream(stream);
 	            m_bigEndian=bigEndian;
 	            m_position=0;           
 	    }

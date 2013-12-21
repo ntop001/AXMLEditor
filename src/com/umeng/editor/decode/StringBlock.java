@@ -65,13 +65,24 @@ public class StringBlock implements IAXMLSerialize{
 				return getStringMapping(str);
 			}
 			
+			return addString(str);
+		}
+		
+		public int addString(String str){
 			mStrings.add(str);
-			
 			return ( mStrings.size() - 1);
+		}
+		
+		public String setString(int index, String str){
+			return mStrings.set(index, str);
 		}
 		
 		public boolean containsString(String str){
 			return mStrings.contains(str.trim());
+		}
+		
+		public int getStringCount(){
+			return mStrings.size();
 		}
 		
         /**
@@ -108,7 +119,7 @@ public class StringBlock implements IAXMLSerialize{
 		        	short len = toShort(rawStrings[offset], rawStrings[offset+1]);
 					mStrings.add(i,new String(rawStrings,offset+2, len*2, Charset.forName("UTF-16LE")));
 					
-					System.out.println("::"+ mStrings.get(i));
+					System.out.println("" + i + "->"+ mStrings.get(i));
 				}
 			}
 			

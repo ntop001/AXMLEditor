@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.umeng.editor.utils.Pair;
+
 public abstract class BXMLNode implements IVisitable{
 	public Pair<Integer,Integer> mChunkSize = new Pair<Integer,Integer>();
 	public Pair<Integer,Integer> mLineNumber= new Pair<Integer,Integer>();

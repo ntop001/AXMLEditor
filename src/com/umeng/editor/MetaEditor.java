@@ -6,35 +6,51 @@ import com.umeng.editor.decode.AXMLDoc;
 import com.umeng.editor.decode.BTagNode;
 import com.umeng.editor.decode.BTagNode.Attribute;
 import com.umeng.editor.decode.BXMLNode;
+import com.umeng.editor.decode.IEditor;
 import com.umeng.editor.decode.StringBlock;
 import com.umeng.editor.utils.TypedValue;
 
-public class AXMLEditor implements ICommand{
+public class MetaEditor implements IEditor{
+	private final String NAME_SPACE = "android";
 	private final String META_DATA = "meta-data";
 	private final String NAME = "name";
 	private final String VALUE = "value";
 	
 	private String mChannelName = "UMENG_CHANNEL";
-	private String mChannelValue = "wandoujia";
+	private String mChannelValue = "test";
 	
-	private AXMLDoc doc;
+	private int namespace;
+	private int meta_data;
+	private int attr_name;
+	private int attr_value;
+	private int channel_name;
+	private int channel_value = -1;
 	
-	@Override
-	public void editMetaData(String name, String value) {
-		// TODO Auto-generated method stu
+	public MetaEditor(){
+	}
+	
+	public void setChannel(String channel){
+		mChannelValue = channel;
+	}
+	
+	//First add resource and get mapping ids
+	private void registStringBlock(StringBlock sb){
+		namespace = sb.putString(NAME_SPACE);
+		meta_data = sb.putString(META_DATA);
+		attr_name = sb.putString(NAME);
+		attr_value = sb.putString(VALUE);
+		channel_name = sb.putString(mChannelName);
+		
+		channel_value = sb.addString(mChannelValue);//now we have a seat in StringBlock
+	}
+	
+	//put string to the seat
+	private void replaceValue(StringBlock sb){
+		sb.setString(channel_value, mChannelValue);
 	}
 
-	public void editMetaData(){
-		//First add resource and get mapping ids
-		StringBlock sb = doc.getStringBlock();
-		
-		int meta_data = sb.putString(META_DATA);
-		int attr_name = sb.putString(NAME);
-		int attr_value = sb.putString(VALUE);
-		int channel_name = sb.putString(mChannelName);
-		int channel_value = sb.putString(mChannelValue);
-		int namespace = sb.getStringMapping("android");
-		
+	//Second find&change meta-data's value or add a new one
+	private void editNode(AXMLDoc doc){
 		BXMLNode application = doc.getApplicationNode(); //manifest node
 		List<BXMLNode> children = application.getChildren();
 		
@@ -42,7 +58,7 @@ public class AXMLEditor implements ICommand{
 		
 		end:for(BXMLNode node : children){
 			BTagNode m = (BTagNode)node;
-			//it's a risk that the value for "android:name" may be not String
+			//it's a risk that the value for "android:name" maybe not String
 			if((meta_data == m.getName()) && (m.getAttrStringForKey(attr_name) == channel_name)){
 					umeng_meta = m;
 					break end;
@@ -50,8 +66,10 @@ public class AXMLEditor implements ICommand{
 		}
 		
 		if(umeng_meta != null){
+			System.out.println("Change value for exist key");
 			umeng_meta.setAttrStringForKey(attr_value, channel_value);
 		}else{
+			System.out.println("Create meta-data field");
 			Attribute name_attr = new Attribute(namespace, attr_name, TypedValue.TYPE_STRING);
 			name_attr.setString( channel_name );
 			Attribute value_attr = new Attribute(namespace, attr_value, TypedValue.TYPE_STRING);
@@ -63,8 +81,15 @@ public class AXMLEditor implements ICommand{
 			
 			children.add(umeng_meta);
 		}
-		
-		//doc.build();
 	}
-	
+
+	@Override
+	public void onEdit(AXMLDoc doc) {
+		if(channel_value == -1){
+			registStringBlock(doc.getStringBlock());
+			editNode(doc);
+		}
+		
+		replaceValue(doc.getStringBlock());
+	}
 }
