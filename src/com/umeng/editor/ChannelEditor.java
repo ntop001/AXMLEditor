@@ -6,18 +6,17 @@ import com.umeng.editor.decode.AXMLDoc;
 import com.umeng.editor.decode.BTagNode;
 import com.umeng.editor.decode.BTagNode.Attribute;
 import com.umeng.editor.decode.BXMLNode;
-import com.umeng.editor.decode.IEditor;
 import com.umeng.editor.decode.StringBlock;
 import com.umeng.editor.utils.TypedValue;
 
-public class MetaEditor implements IEditor{
+public class ChannelEditor {
 	private final String NAME_SPACE = "android";
 	private final String META_DATA = "meta-data";
 	private final String NAME = "name";
 	private final String VALUE = "value";
 	
 	private String mChannelName = "UMENG_CHANNEL";
-	private String mChannelValue = "test";
+	private String mChannelValue = "placeholder";
 	
 	private int namespace;
 	private int meta_data;
@@ -26,7 +25,10 @@ public class MetaEditor implements IEditor{
 	private int channel_name;
 	private int channel_value = -1;
 	
-	public MetaEditor(){
+	private AXMLDoc doc;
+	
+	public ChannelEditor(AXMLDoc doc){
+		this.doc = doc;
 	}
 	
 	public void setChannel(String channel){
@@ -41,7 +43,9 @@ public class MetaEditor implements IEditor{
 		attr_value = sb.putString(VALUE);
 		channel_name = sb.putString(mChannelName);
 		
-		channel_value = sb.addString(mChannelValue);//now we have a seat in StringBlock
+		if(channel_value == -1){
+			channel_value = sb.addString(mChannelValue);//now we have a seat in StringBlock
+		}
 	}
 	
 	//put string to the seat
@@ -66,10 +70,8 @@ public class MetaEditor implements IEditor{
 		}
 		
 		if(umeng_meta != null){
-			System.out.println("Change value for exist key");
 			umeng_meta.setAttrStringForKey(attr_value, channel_value);
 		}else{
-			System.out.println("Create meta-data field");
 			Attribute name_attr = new Attribute(namespace, attr_name, TypedValue.TYPE_STRING);
 			name_attr.setString( channel_name );
 			Attribute value_attr = new Attribute(namespace, attr_value, TypedValue.TYPE_STRING);
@@ -82,13 +84,10 @@ public class MetaEditor implements IEditor{
 			children.add(umeng_meta);
 		}
 	}
-
-	@Override
-	public void onEdit(AXMLDoc doc) {
-		if(channel_value == -1){
-			registStringBlock(doc.getStringBlock());
-			editNode(doc);
-		}
+	
+	public void commit() {
+		registStringBlock(doc.getStringBlock());
+		editNode(doc);
 		
 		replaceValue(doc.getStringBlock());
 	}

@@ -3,7 +3,6 @@ package com.umeng.editor.decode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.System.out;
@@ -22,14 +21,8 @@ public class AXMLDoc {
 	private ResBlock mResBlock;
 	
 	private BXMLTree mXMLTree;
-	private List<IEditor> cmds;
 	
 	public AXMLDoc(){
-	}
-	
-	public void addEditor(IEditor editor){
-		if(cmds == null) cmds = new ArrayList<IEditor>();
-		cmds.add(editor);
 	}
 
 	public StringBlock getStringBlock(){
@@ -71,22 +64,12 @@ public class AXMLDoc {
 		return null;
 	}
 	
-	private void commitChanges(){
-		if(cmds == null || cmds.isEmpty()) return;
-		
-		for(IEditor editor:cmds){
-			editor.onEdit(this);
-		}
-	}
-	
 	/**
 	 * Prepare() should be called, if any resource has changes.
 	 * @param os
 	 * @throws IOException
 	 */
 	public void build(OutputStream os) throws IOException{
-		commitChanges();
-		
 		IntWriter writer = new IntWriter(os, false);
 		mStringBlock.prepare();
 		mResBlock.prepare();
@@ -171,14 +154,12 @@ public class AXMLDoc {
 	private void parseResourceBlock(IntReader reader) throws IOException{
 		ResBlock block = new ResBlock();
 		block.read(reader);
-		block.print();
 		mResBlock = block;
 	}
 	
 	private void parseXMLTree(IntReader reader) throws Exception{
 		BXMLTree tree = new BXMLTree();
 		tree.read(reader);
-		tree.print(new XMLVisitor(mStringBlock));
 		
 		mXMLTree = tree;
 	}

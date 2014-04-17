@@ -118,8 +118,6 @@ public class StringBlock implements IAXMLSerialize{
 					int offset = mPerStrOffset[i];
 		        	short len = toShort(rawStrings[offset], rawStrings[offset+1]);
 					mStrings.add(i,new String(rawStrings,offset+2, len*2, Charset.forName("UTF-16LE")));
-					
-					System.out.println("" + i + "->"+ mStrings.get(i));
 				}
 			}
 			

@@ -3,8 +3,6 @@ package com.umeng.editor;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.Arrays;
-import java.util.List;
 
 import com.umeng.editor.decode.AXMLDoc;
 
@@ -18,39 +16,49 @@ public class Main {
 		try{
 			if(args == null || args.length <2){
 				System.err.println("Usage:");
-				System.err.println("x(ml) AndroidManifest.xml xxx");
-				System.err.println("a(pk) [file].apk xxx,xxx,xxx...");
+				System.err.println("AndroidManifest.xml xxx [xxx] [xxx]");
 				System.exit(0);
 			}
 			
-			String origin = args[0];
-			
-			if(origin.equals("x") || origin.equals("xml")){
-				cloneAXML(new File(args[1]), args[2]);
+			if(args.length == 2){
+				cloneAXML(new File(args[0]), args[1]);
+			}else{
+				
+				String[] chans = new String[args.length -1];
+				for(int i=0; i< args.length; i++){
+					if(i > 0){
+						chans[i-1] = args[i];
+					}
+				}	
+				cloneAXML(new File(args[0]), chans);
 			}
-			
-			if(origin.equals("a") || origin.equals("apk")){
-				cloneApk(new File(args[1]), Arrays.asList(args[2].split(",")));
-			}		
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 	}
 	
 	private static void cloneAXML(File axml, String channel) throws Exception{
-		MetaEditor editor = new MetaEditor();
 		AXMLDoc doc = new AXMLDoc();
 		doc.parse(new FileInputStream(axml));
-		doc.addEditor(editor);
 		
+		ChannelEditor editor = new ChannelEditor(doc);
+
 		editor.setChannel(channel);
-		doc.build(new FileOutputStream(String.format("test/%s.xml", channel)));	
+		editor.commit();
+		
+		doc.build(new FileOutputStream(String.format("axml_%s.xml", channel)));	
 	}
 	
-	private static void cloneApk(File apk, List<String> channels) throws Exception{
-		Kagebunsin k = new Kagebunsin(null);
-		k.setApk(apk);
-		k.setChannels(channels);
-		k.start();
+	private static void cloneAXML(File axml, String[] channels) throws Exception{
+		AXMLDoc doc = new AXMLDoc();
+		doc.parse(new FileInputStream(axml));
+		
+		ChannelEditor editor = new ChannelEditor(doc);
+		
+		for(String chan : channels){
+			editor.setChannel(chan);
+			editor.commit();
+			doc.build(new FileOutputStream(String.format("axml_%s.xml", chan)));
+		}	
 	}
 }

@@ -85,7 +85,9 @@ public class XMLVisitor implements IVisitor{
 		return mStrings.getStringFor(index);
 	}
 	
+	@SuppressWarnings("unused")
 	private int getResIdAt(int index){
+		//TODO final res result in resources.arsc
 		return mRes.getResourceIdAt(index);
 	}
 	
