@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
+import org.apache.commons.io.FileUtils;
+
 import com.umeng.editor.decode.AXMLDoc;
 
 public class Main {
@@ -14,42 +16,28 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		try{
-			if(args == null || args.length <2){
+			Args arg = Args.parseArgs(args);
+		
+			if(arg == null){
 				System.err.println("Usage:");
-				System.err.println("AndroidManifest.xml xxx [xxx] [xxx]");
+				System.err.println("AndroidManifest.xml dir  xxx [xxx] [xxx]");
 				System.exit(0);
 			}
 			
-			if(args.length == 2){
-				cloneAXML(new File(args[0]), args[1]);
-			}else{
-				
-				String[] chans = new String[args.length -1];
-				for(int i=0; i< args.length; i++){
-					if(i > 0){
-						chans[i-1] = args[i];
-					}
-				}	
-				cloneAXML(new File(args[0]), chans);
-			}
+			cloneAXML(new File(arg.mAXML), arg.mDir, arg.mChannels);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 	}
 	
-	private static void cloneAXML(File axml, String channel) throws Exception{
-		AXMLDoc doc = new AXMLDoc();
-		doc.parse(new FileInputStream(axml));
+	private static void cloneAXML(File axml, String dir, String[] channels) throws Exception{
+		if(dir != null){
+			File f = new File(dir);
+			if(f.isFile() || !f.exists()){
+				f.mkdirs();
+			}
+		}
 		
-		ChannelEditor editor = new ChannelEditor(doc);
-
-		editor.setChannel(channel);
-		editor.commit();
-		
-		doc.build(new FileOutputStream(String.format("axml_%s.xml", channel)));	
-	}
-	
-	private static void cloneAXML(File axml, String[] channels) throws Exception{
 		AXMLDoc doc = new AXMLDoc();
 		doc.parse(new FileInputStream(axml));
 		
@@ -58,7 +46,39 @@ public class Main {
 		for(String chan : channels){
 			editor.setChannel(chan);
 			editor.commit();
-			doc.build(new FileOutputStream(String.format("axml_%s.xml", chan)));
+			doc.build(new FileOutputStream(new File(dir,String.format("axml_%s.xml", chan))));
 		}	
+	}
+	
+	static class Args {
+		public String mAXML;
+		public String mDir;
+		public String[] mChannels;
+		
+		public static Args parseArgs(String[] args){
+			Args arg = new Args();
+			
+			if(args == null || args.length < 2){
+				return null;
+			}
+			
+			arg.mAXML = args[0];
+			int chanIndex = 1;
+			if(args[1].equals("-dir")){
+				if(args.length < 4){
+					return null;
+				}
+				arg.mDir = args[2];
+				chanIndex = 3;
+			}
+			
+			String[] chans = new String[args.length-chanIndex];
+			for(int i= chanIndex ; i< args.length; i++){
+				chans[i-chanIndex] = args[i];
+			}
+			
+			arg.mChannels = chans;
+			return arg;
+		}
 	}
 }

@@ -186,7 +186,6 @@ public class BTagNode extends BXMLNode {
 		for(Attribute attr : attrs){
 			if(attr.mName == key){
 				attr.setValue(TypedValue.TYPE_STRING, string_value);
-				attr.setString(string_value);
 				return true;
 			}
 		}
@@ -253,7 +252,7 @@ public class BTagNode extends BXMLNode {
 		public Attribute(int ns, int name, int type){
 			mNameSpace = ns;
 			mName = name;
-			mType = type;
+			mType = type<<24;
 		}
 		
 		public void setString(int str){
@@ -271,6 +270,7 @@ public class BTagNode extends BXMLNode {
 		 * @param value
 		 */
 		public void setValue(int type, int value){
+			mType = type<<24;
 			if(type == TypedValue.TYPE_STRING){
 				mValue = value;
 				mString = value;

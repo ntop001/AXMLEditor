@@ -9,7 +9,10 @@ import com.umeng.editor.utils.Pair;
 public abstract class BXMLNode implements IVisitable{
 	public Pair<Integer,Integer> mChunkSize = new Pair<Integer,Integer>();
 	public Pair<Integer,Integer> mLineNumber= new Pair<Integer,Integer>();
-	
+	{
+		mLineNumber.first = 0;
+		mLineNumber.second = 0;
+	}
 	private List<BXMLNode> mChild;
 	
 	public void checkTag(int expect, int value) throws IOException{

@@ -110,6 +110,7 @@ public class AXMLDoc {
 	
 	public void print(){
 		out.println("size:" + mDocSize);
+		mXMLTree.print(new XMLVisitor(mStringBlock));
 	}
 	
 	public void parse(InputStream is) throws Exception{

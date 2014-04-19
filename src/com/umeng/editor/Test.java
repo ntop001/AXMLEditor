@@ -12,15 +12,15 @@ public class Test {
 			doc.parse(new FileInputStream("test/AndroidManifest.xml"));
 			doc.print();
 			
-//			ChannelEditor editor = new ChannelEditor(doc);
-//			editor.setChannel("this's a test channel");
-//			editor.commit();
-//			
-//			doc.build(new FileOutputStream("test/abc.xml"));
-//			
-//			AXMLDoc doc2 = new AXMLDoc();
-//			doc2.parse(new FileInputStream("test/abc.xml"));
-//			doc2.print();
+			ChannelEditor editor = new ChannelEditor(doc);
+			editor.setChannel("abc");
+			editor.commit();
+			
+			doc.build(new FileOutputStream("test/abc.xml"));
+			
+			AXMLDoc doc2 = new AXMLDoc();
+			doc2.parse(new FileInputStream("test/abc.xml"));
+			doc2.print();
 			
 		}catch(Exception e){
 			e.printStackTrace();
