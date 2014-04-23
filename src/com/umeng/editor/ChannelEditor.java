@@ -10,7 +10,7 @@ import com.umeng.editor.decode.StringBlock;
 import com.umeng.editor.utils.TypedValue;
 
 public class ChannelEditor {
-	private final String NAME_SPACE = "android";
+	private final String NAME_SPACE = "http://schemas.android.com/apk/res/android";
 	private final String META_DATA = "meta-data";
 	private final String NAME = "name";
 	private final String VALUE = "value";
